@@ -7,4 +7,4 @@ npm i vscode-languageserver-types@3.16.0-next.3
 cp -r ../Server/bin/Debug/net472 ./server
 npm install
 npm run compile
-vsce package
+#vsce package
