@@ -51,7 +51,7 @@ let client: vscodelc.LanguageClient;
 
 export function activate(context: vscode.ExtensionContext)
 {
-    var fn = __dirname + '/../Server/net5.0/Server.exe';
+    var fn = __dirname + '/../Server/net472/Server.exe';
     const server: vscodelc.Executable =
     {
         command: fn,
