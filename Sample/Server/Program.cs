@@ -1,4 +1,5 @@
 ﻿using LspTypes;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 using System;
@@ -12,18 +13,12 @@ namespace Server
 {
     class Program
     {
-        private static void Main(string[] args) => MainAsync(args).Wait();
+        static void Main(string[] args) => MainAsync(args).Wait();
 
-        //static void Main(string[] args)
-        //{
-        //    Program program = new Program();
-        //    program.MainAsync(args).GetAwaiter().GetResult();
-        //}
-
-        private static async Task MainAsync(string[] args)
+        static async Task MainAsync(string[] args)
         {
-            System.IO.Stream stdin = Console.OpenStandardInput();
-            System.IO.Stream stdout = Console.OpenStandardOutput();
+            Stream stdin = Console.OpenStandardInput();
+            Stream stdout = Console.OpenStandardOutput();
             stdin = new Tee(stdin, new Dup("editor"), Tee.StreamOwnership.OwnNone);
             stdout = new Tee(stdout, new Dup("server"), Tee.StreamOwnership.OwnNone);
             var languageServer = new LSPServer(stdout, stdin);
@@ -33,26 +28,20 @@ namespace Server
 
     class LSPServer : INotifyPropertyChanged, IDisposable
     {
-        private readonly JsonRpc rpc;
-        private readonly ManualResetEvent disconnectEvent = new ManualResetEvent(false);
-        private Dictionary<string, DiagnosticSeverity> diagnostics;
+        readonly JsonRpc rpc;
+        readonly ManualResetEvent disconnectEvent = new ManualResetEvent(false);
+        Dictionary<string, DiagnosticSeverity> diagnostics;
         public event PropertyChangedEventHandler PropertyChanged;
         public event EventHandler Disconnected;
-        private bool isDisposed;
-        
+        bool isDisposed;
+
         public LSPServer(Stream sender, Stream reader)
         {
             rpc = JsonRpc.Attach(sender, reader, this);
             rpc.Disconnected += OnRpcDisconnected;
         }
-        private void OnRpcDisconnected(object sender, JsonRpcDisconnectedEventArgs e)
-        {
-            Exit();
-        }
-        private void NotifyPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        void OnRpcDisconnected(object sender, JsonRpcDisconnectedEventArgs e) => Exit();
+        void NotifyPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         public void Dispose()
         {
             Dispose(true);
@@ -81,78 +70,89 @@ namespace Server
         {
             disconnectEvent.Set();
             Disconnected?.Invoke(this, new EventArgs());
-            System.Environment.Exit(0);
+            Environment.Exit(0);
         }
 
-        private static readonly object _object = new object();
-        private readonly bool trace = true;
+        static readonly object _object = new object();
+        readonly bool trace = true; // not effected by setting??
+
+        void traceLine(string line)
+        {
+            if (trace) Console.Error.WriteLine(line);
+        }
 
         [JsonRpcMethod(Methods.InitializeName)]
         public object Initialize(JToken arg)
         {
             lock (_object)
             {
-                if (trace)
+                traceLine("<-- Initialize");
+                traceLine(arg.ToString());
+
+                //var init_params = arg.ToObject<InitializeParams>();
+
+                var result = new InitializeResult() { Capabilities = GetCapabilities() };
+                traceLine("--> " + JsonConvert.SerializeObject(result));
+
+                return result;
+            }
+        }
+
+        ServerCapabilities GetCapabilities()
+        {
+            return new ServerCapabilities
+            {
+                TextDocumentSync = new TextDocumentSyncOptions
                 {
-                    System.Console.Error.WriteLine("<-- Initialize");
-                    System.Console.Error.WriteLine(arg.ToString());
-                }
+                    OpenClose = true,
+                    Change = TextDocumentSyncKind.Incremental,
+                    Save = new SaveOptions
+                    {
+                        IncludeText = true
+                    }
+                },
 
-                var init_params = arg.ToObject<InitializeParams>();
+                CompletionProvider = null,
 
-                ServerCapabilities capabilities = new ServerCapabilities
+                HoverProvider = true,
+
+                SignatureHelpProvider = null,
+
+                DefinitionProvider = true,
+
+                TypeDefinitionProvider = false,
+
+                ImplementationProvider = false,
+
+                ReferencesProvider = true,
+
+                DocumentHighlightProvider = true,
+
+                DocumentSymbolProvider = true,
+
+                CodeLensProvider = null,
+
+                DocumentLinkProvider = null,
+
+                DocumentFormattingProvider = true,
+
+                DocumentRangeFormattingProvider = false,
+
+                RenameProvider = true,
+
+                FoldingRangeProvider = new SumType<bool, FoldingRangeOptions, FoldingRangeRegistrationOptions>(false),
+
+                ExecuteCommandProvider = null,
+
+                WorkspaceSymbolProvider = false,
+
+                SemanticTokensProvider = new SemanticTokensOptions()
                 {
-                    TextDocumentSync = new TextDocumentSyncOptions
+                    Full = true,
+                    Range = false,
+                    Legend = new SemanticTokensLegend()
                     {
-                        OpenClose = true,
-                        Change = TextDocumentSyncKind.Incremental,
-                        Save = new SaveOptions
-                        {
-                            IncludeText = true
-                        }
-                    },
-
-                    CompletionProvider = null,
-
-                    HoverProvider = true,
-
-                    SignatureHelpProvider = null,
-
-                    DefinitionProvider = true,
-
-                    TypeDefinitionProvider = false,
-
-                    ImplementationProvider = false,
-
-                    ReferencesProvider = true,
-
-                    DocumentHighlightProvider = true,
-
-                    DocumentSymbolProvider = true,
-
-                    CodeLensProvider = null,
-
-                    DocumentLinkProvider = null,
-
-                    DocumentFormattingProvider = true,
-
-                    DocumentRangeFormattingProvider = false,
-
-                    RenameProvider = true,
-
-                    FoldingRangeProvider = new SumType<bool, FoldingRangeOptions, FoldingRangeRegistrationOptions>(false),
-
-                    ExecuteCommandProvider = null,
-
-                    WorkspaceSymbolProvider = false,
-
-                    SemanticTokensProvider = new SemanticTokensOptions()
-                    {
-                        Full = true,
-                        Range = false,
-                        Legend = new SemanticTokensLegend()
-                        {
-                            tokenTypes = new string[] {
+                        tokenTypes = new string[] {
                                 "class",
                                 "variable",
                                 "enum",
@@ -160,25 +160,13 @@ namespace Server
                                 "string",
                                 "keyword",
                             },
-                            tokenModifiers = new string[] {
+                        tokenModifiers = new string[] {
                                 "declaration",
                                 "documentation",
                             }
-                        }
-                    },
-                };
-
-                InitializeResult result = new InitializeResult
-                {
-                    Capabilities = capabilities
-                };
-                string json = Newtonsoft.Json.JsonConvert.SerializeObject(result);
-                if (trace)
-                {
-                    System.Console.Error.WriteLine("--> " + json);
-                }
-                return result;
-            }
+                    }
+                },
+            };
         }
 
         [JsonRpcMethod(Methods.InitializedName)]
@@ -188,11 +176,8 @@ namespace Server
             {
                 try
                 {
-                    if (trace)
-                    {
-                        System.Console.Error.WriteLine("<-- Initialized");
-                        System.Console.Error.WriteLine(arg.ToString());
-                    }
+                    traceLine("<-- Initialized");
+                    traceLine("arg.ToString()");
                 }
                 catch (Exception)
                 { }
@@ -206,10 +191,7 @@ namespace Server
             {
                 try
                 {
-                    if (trace)
-                    {
-                        System.Console.Error.WriteLine("<-- Shutdown");
-                    }
+                    traceLine("<-- Shutdown");
                 }
                 catch (Exception)
                 { }
@@ -224,10 +206,7 @@ namespace Server
             {
                 try
                 {
-                    if (trace)
-                    {
-                        System.Console.Error.WriteLine("<-- Exit");
-                    }
+                    traceLine("<-- Exit");
                     Exit();
                 }
                 catch (Exception)
