@@ -21,15 +21,15 @@
     "vscode": "^1.48.0"
   },
   "activationEvents": [
-    "onLanguage:lsptypes"
+    "onLanguage:lean"
   ],
   "main": "./out/extension",
   "contributes": {
     "languages": [
       {
-        "id": "lsptypes",
+        "id": "lean",
         "extensions": [
-          ".lsp"
+          ".lean"
         ]
       }
     ],
