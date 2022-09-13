@@ -5,7 +5,7 @@ Protocol/bin/
 Sample/Server/bin/
 Sample/Server/obj/
 *.vsix
-Sample/VsCode/package-lock.json
+#Sample/VsCode/package-lock.json
 Sample/VsCode/node_modules/
 Sample/VsCode/out/
 Sample/VsCode/server/net472/
