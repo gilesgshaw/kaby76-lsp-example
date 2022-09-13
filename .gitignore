@@ -9,5 +9,5 @@ Sample/VsCode/package-lock.json
 Sample/VsCode/node_modules/
 Sample/VsCode/out/
 Sample/VsCode/server/net472/
-Sample/VsCode/.vscode/launch.json
-Sample/VsCode/.vscode/
+#Sample/VsCode/.vscode/launch.json
+#Sample/VsCode/.vscode/
