@@ -67,6 +67,10 @@ export function activate(context: vscode.ExtensionContext)
         documentSelector: [
             {language: 'lean'},
         ]
+        //synchronize: {
+        //    // Notify the server about file changes to '.clientrc files contained in the workspace
+        //    fileEvents: vscode.workspace.createFileSystemWatcher('**/.clientrc')
+        //}
     };
 
     client = new vscodelc.LanguageClient('LSP server example', serverOptions, clientOptions);
