@@ -65,7 +65,7 @@ export function activate(context: vscode.ExtensionContext)
     {
         // Register the server for lean documents
         documentSelector: [
-            {scheme: 'file', language: 'lean'},
+            {language: 'lean'},
         ]
     };
 
