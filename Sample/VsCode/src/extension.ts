@@ -63,9 +63,9 @@ export function activate(context: vscode.ExtensionContext)
 
     let clientOptions: vscodelc.LanguageClientOptions =
     {
-        // Register the server for plain text documents
+        // Register the server for lean documents
         documentSelector: [
-            {scheme: 'file', language: 'txt'},
+            {scheme: 'file', language: 'lean'},
         ]
     };
 
